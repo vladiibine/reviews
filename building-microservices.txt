@@ -1,0 +1,378 @@
+This document contains the notes that I took while reading the book "Building microservices, 2nd edition".
+
+* Article about how sagas are not going to solve technical errors (db being down), and how they can only solve business errors (credit card reaching a limit): https://www.ufried.com/blog/limits_of_saga_pattern/
+
+* From the references (Martin Fowler's "Eradicating non-determinism in tests"): "Gerard Meszaros's Humble Object pattern says that whenever you have some logic that's in a hard-to-test environment, you should isolate the logic you need to test from that environment. "
+
+* From the article mentioned above: "[talking about flaky tests caused by leaking resources] Usually the best way to handle these kind of resources is through a Resource Pool. If you do this then a good tactic is to configure the pool to a size of 1 and make it throw an exception should it get a request for a resource when it has none left to give"
+
+* Confused deputy problem: make services so stuff they shouldn't be doing. Example: A logged in user manipulates URLs to see the data of other users. (The name of this problem is not intuitively connected to the example)
+
+* "we can consider governance as agreeing how things should be done, making sure people know how things should be done, and making sure things are done that way"
+
+* "The act of making nontechnical product owners more accountable for prioritization around technical activities is nontrivial, but it is absolutely worth it in my experience"
+
+* "Architecture is about the important stuff. Whatever that is.” (Ralph Johnson)
+
+* "I would suggest that geographical boundaries between people involved with the development should be a strong consideration when looking to define both team boundaries and software boundaries"
+
+* To allow for more independence in teams, communication between the services of different teams could me made async. As such, teams wouldn't need to coordinate with each other in order to launch.
+
+* "Maaret Pyhäjärvi’s self-published and concise Ensemble Programming Guidebook."
+
+* A reason why open-source code should be of high quality: "The less stable or mature a service is, the harder it will be to allow people outside the core team to submit patches"
+
+* "Paved road" approach to platforms: Make them optional, but easy to use. They will be used more than if  u force them to use them
+
+* String ownership vs collective ownership:
+** strong ownership (at its extreme)  is about a team owning the code, life-cycle and decisions about a piece of software (having devops knowledge, owning the technologies involved, and waking up at night when the product is down)
+** collective ownership is more about having everyone know every service. This forces a high degree of consistency across all services
+** "A poly-skilled team focused on the end-to-end delivery of customer-facing software will need to be very good at having collective ownership. At an organizational level, if you want teams to have a high degree of autonomy, then it is important that they also have a strong ownership model"
+
+* "The Two-Pizza Team is autonomous. Interaction with other teams is limited, and when it does occur, it is well documented, and interfaces are clearly defined." (John Rossman, ex-Amazon executive)
+
+* !!!From "Accelerate". Important factors in the speed of teams. Teams.should be able to:
+**Make large-scale changes to the design of their system without the permission of somebody outside the team. 
+**Make large-scale changes to the design of their system without depending on other teams to make changes in their systems or creating significant work for other teams
+**Complete their work without communicating and coordinating with people outside their team
+**Deploy and release their product or service on demand, regardless of other services it depends upon
+**Do most of their testing on demand, without requiring an integrated test environment
+**Perform deployments during normal business hours with negligible downtime
+
+
+* BFF could be used when presenting 3rd parties custom APIs for their needs
+
+* BFF - basically solving the same general problem as graphQL (a generalisation for graphql we could say!)
+
+* BFF (backend-for-frontend). Same like aggregating gateway, but designed to:
+** solve the problems of a specific frontend
+** solve the ownership problem (who owns the gateway?)
+*** thus prevent handovers
+*** so basically each frontend team, owns its own bff, which does whatever aggregations it needs
+
+* Aggregating gateway: When the frontend needs to make N requests: use instead an aggregating gateway. It will receive 1 request from the frontend, do N calls, throw away the undeeded data, and return the response to the frontend. In theory, because the network connection between the agg.gw and the N services is far shorter, the frontend could receive the response faster (in some situations, like when the requests can't be done in parallel)
+
+* Stream-aligned teams seem fine and all, until you realise the frontends need to share the same browser. Emitting events from different parts of the app seems ok
+
+* Splitting frontends:
+** widger-based decomposition
+** page-based decomposition (so multiple SPAs)
+
+* "Speed of delivery trumps a consistency of user experience, at least as far as AWS is concerned"
+
+* Why people keep having dedicated "frontend" teams:
+** those people are harder to find, and they're put on teams with their own kind, so they don't feel lonely
+** need to have a consistent look-and-feel across ALL the products
+** it's harder to architect a single-page-app, with code coming from the code-bases of different teams
+
+* Scaling axes:
+** horizontal
+** vertical
+** data partitioning
+** functional decomposition (splitting services into multiple ones)
+
+* "The need to change our systems to deal with scale isn’t a sign of failure. It is a sign of success"
+
+* "The ideal number of places to cache is zero. Anything else should be an optimization you have to make—but be aware of the complexity it can bring"
+
+* Cache invalidation strategies (not complete):
+** TTL 
+** Conditional GET (HTTP Etag (for responses) and HTTP If-None-Match (for requests) - have a "tag" when making the request, that's like a "hash" of the response. If the server sees that the response hasn't changed, it responds with "No change!" to the client instead of doing any work)
+
+* Problems that can be solved by caches (but different caching strategies!):
+** end-to-end latency
+** performance for a service
+** performance for the db
+
+* Write-through caches! Not sure what the author means exactly, but it sounds pretty cool. UPDATE: it's when you update the cache "at the same time" as you update the db
+
+* Competing consumer pattern: where you have a queue of common work, and workers polling it for messages and working on 
+
+* Chaos Toolkit (some tool for chaos engineering): https://chaostoolkit.org/ 
+
+* ...and Gremlin, another tool for chaos engineering: https://www.gremlin.com/ 
+
+* AP is good (from CAP) because even if our systems were CP, they are just a map of reality, which might always be different anyway (in banking, for example, a user input error could occur). Also AP is far easier to build than CP
+
+* timeouts which include multiple calls are an interesting problem. If the entire call from svc. a to b to c and back needs to happen in N seconds, the time spent in svc a and b need to be passed along to c (wait... that sounds weird. Why not just put the time-out on a? Well we can put the time-out on a, to solve the user-facing issue, but b and c need to know when to give up as well, so the remaining time-out does need to be passed along)
+
+* maybe make time-outs configurable, because they seem important for devops people to play with
+
+* time-outs for inbound requests matter as well
+
+* OpenID Connect -> implementation of Oauth 2.0 which is cool
+
+* Snyk/GithubScanning can alert you of 3rd party libraries that have vulnerabilities
+
+* gitleaks: took that can run as a pre-commit hook, and checks the code for committed secrets
+
+* Secrets: generating expiring access tokens is awesome!
+
+* Vault: when u change a secret in Vault, it updates configuration files on servers that use configs. Consul does that as well. Pretty awesome.
+
+* "Verizon’s 2020 Data Breach Investigations Report found that some form of credential theft was used in 80% of cases caused by hacking. This includes situations in which credentials were stolen through mechanisms like phishing attacks or where passwords were brute-forced."
+
+* Intrusion detection tool for containers: Aqua
+
+* Security: Identify (potential atrackers), Protect (key assets), Detect (attacks), Respond, Recover
+
+* Unrelated to the book, architecture concerns (ities, non functional requirements, NFRs) 
+** availability (9's)
+** discoverability
+** extensibility
+** fault tolerance
+** maintainability
+** modularization
+** observability
+** reusability
+** quality
+** safety
+** scalability
+** security
+** testability
+** usability
+** ... https://en.wikipedia.org/wiki/Non-functional_requirement?wprov=sfla1 
+
+* "Not testing in prod is like not practicing with the full orchestra because your solo sounded fine at home." (Charity Majors)
+
+* About semantic monitoring: "You can get super formal with this approach (quite literally, with some organizations making use of formal methods for this)"...what?
+
+* Alerts should be RUTPUDAF:
+**Relevant
+***Make sure the alert is of value.
+**Unique
+***Ensure that the alert isn’t duplicating another.
+**Timely
+***We need to get the alert quickly enough to make use of it.
+**Prioritized
+***Give the operator enough information to decide in what order the alerts should be dealt with.
+**Understandable
+***The information in the alert needs to be clear and readable.
+**Diagnostic
+***It needs to be clear what is wrong.
+**Advisory
+***Help the operator understand what actions need to be taken.
+**Focusing
+***Draw attention to the most important issues.
+
+* SLO-s: team specific objectives, which support SLAs, but might do other things as well
+
+* SLAs should be "bare minimum" to the extent that of you only achieved that, the customer would not be happy. AWS says it makes its best effort for EC2 to have 90% availability. In practice, they offer far higher availability though
+
+* Alternatives to prometheus (that handle high cardinality data points (metrics with lots of tags) better): Honeycomb and Lightstep
+
+* From the prometheus devs: "Remember that every unique combination of key-value label pairs represents a new time series, which can dramatically increase the amount of data stored. Do not use labels to store dimensions with high cardinality (many different label values), such as user IDs, email addresses, or other unbounded sets of values."
+
+* Elasticsearch isn't the best at storing lots of data (specifically about logs, but likely applicable to everything). The author says that Humio is better
+
+* Log aggregation = prolly the most important thing with microservices as far as the author is concerned
+
+* Observability
+** Log aggregation
+** Metrics
+** Distributed tracing
+** SLOs
+** Alerting
+** Semantic monitoring (what events should wake us up at night)
+** Testing in production
+
+* "Some have focused on “the three pillars” of observability in the form of metrics, logging, and distributed tracing"
+
+* "The observability of a system is the extent to which you can understand the internal state of the system from external outputs."
+
+* "Due to the time it takes to run performance tests, it isn’t always feasible to run them on every check-in. It is a common practice to run a subset every day, and a larger set every week"
+
+* "In these situations, it can be quite sensible to avoid testing prior to production altogether" (talking about situations where feedback from the customers is important fast...like some startups)
+
+* "Ditching end-to-end tests without fully understanding what you’ve lost is probably a bad idea."
+
+* "From speaking to people who have been implementing microservices at scale for a while now, I have learned that most of them over time remove the need entirely for end-to-end tests in favor of other mechanisms to validate the quality of their software—for example, the use of explicit schemas and CDCs, in-production testing, or perhaps some of the progressive delivery techniques we’ve discussed, such as canary releases."
+
+* contract tests: service tests, but with other services stubbed, and the stubs shared with the team maintaining the services that were stubbed 
+
+* but e2e tests help with semantic API breakages
+
+* f**k! e2e tests might be an antipattern because they also break independent deployability (u deploy only if all tests pass)
+
+* "The research summarized in Accelerate found that high-performing teams were more likely to “do most of their testing on demand, without requiring an integrated test environment.”"
+
+* oh f**k! The 'metaversion', or a version bundling together the versions of N microservices is an antipattern. Microservices are supposed to be independently deployable, and metaversions can lead people to not even try to deploy them independently. This is worse than a monolith
+
+* end-2-end tests should be fast...otherwise they can harm more than help
+
+* !!! cool idea about end-to-end test ownership (who fixes a broken test, if it touches the projects of N teams?): Set an owning team for each test.
+
+* !!! cross-microservice tests: A final CI test stage for microservices should be deployment to a common environment, where all other microservices also get deployed. There, all sorts of end-to-end tests would automatically run
+
+* tool: mountebank - "test doubles (mocks/stubs/etc) over the wire" - like the server I wrote in flask, to fake external services (but I think simulating state in mountebank would have been harder). Doesn't work for messaging protocols though :( There's a tool for that though: Pact
+
+* Service test = what I called "API test". Test a service's functionalities by calling its endpoints directly
+
+* Parallel runs (when u send requests to 2 versions of the software. One does the things, another is used for comparing results with the first - this is like an a/b test, but b is hidden from users). Gitlab created the tool Scientist to help with this
+
+* Regarding feature flags: "Other teams put "expiration dates" on their toggles. Some go as far as creating "time bombs" which will fail a test (or even refuse to start an application!) if a feature flag is still around after its expiration date. ". Some create a "flag removal" ticket whenever they create the flag
+
+* Feature toggle styles:
+** enabled per request (via cookie/query param/etc)
+** enabled per envionment (eg. production/staging/dev)
+** enabled per user type (admin/internal)
+** enabled for user segments (0.1% of users identified by hash(username) % 1000 == 0)
+
+* "For a much deeper dive into the world of feature toggles, I can heartily recommend Pete Hodgson’s writeup “Feature Toggles (aka Feature Flags)”," ( https://martinfowler.com/articles/feature-toggles.html )
+
+* "Borg, Omega and Kubernetes comparison" (by Brandon Burns) - good historical overview and comparison for the 3 platforms
+
+* "Fully managed solutions exist for managing feature toggles, including LaunchDarkly and Split."
+
+* FaaS platforms foe k8s: OpenFaas and KNative
+
+* "in the future, I expect Kubernetes to be everywhere. You just won’t know it."
+
+* "...you can also use both of them together in some situations (Helm for initial install, Operator for life-cycle operations)."
+
+* In Google' Borg, containers running on a machine SHARE a base image/layer.
+
+* On Lambda functions: "A good example would be the BBC, which makes use of Lambda functions as part of its core technology stack that provides the BBC News website. The overall system uses a mix of Lambda and EC2 instances—with the EC2 instances often being used in situations in which Lambda function invocations would be too expensive"
+
+* FaaS architecture styles:
+** microservice as a function
+** aggregate (from DDD) as a function
+
+* "The WebAssembly System Interface (WASI) was defined as a way to let Wasm move from the browser and work anywhere a compatible WASI implementation can be found. An example of this is the ability to run Wasm on content delivery networks like Fastly or Cloudflare"
+
+* "Across Google Cloud, Azure, and AWS, you can only control the memory given to each function. This in turn seems to imply that a certain amount of CPU and I/O is given to your function runtime, but you can’t control those aspects directly. This may mean that you end up having to give more memory to a function even if it doesn’t need it just to get the CPU you need. "
+
+* For better isolated containers, for their use with Lambda-like platforms, there's Firecracker
+
+* Though Windows containers exist, and are generally more resource-intenssive, they have a native way of choosing the isolation level (process, or vm-like)
+
+* "Type 2 virtualization is the sort implemented by AWS, VMware, vSphere, Xen, and KVM. (Type 1 virtualization refers to technology in which the VMs run directly on hardware, not on top of another operating system.)"
+
+* Gitops tool: Flux ( https://www.weave.works/oss/flux/ )
+
+* !!!Alternative to k8s: Nomad (k8s is for containers, nomad is for all kinds of stuff: vm, jvm stuff, containers, hadoop jobs etc)
+
+* 3 microservices per developer is what the author says is common for "mature microservice companies"
+
+* " developers the ability to self-service-provision individual services or groups of services is the key to making their lives easier."
+
+* Principles for making microservices work:
+** isolated deployment (no shared hosting)...cuz performance impact of dev to prod are bad
+** automation
+** infra as code
+** zer0 downtime deployment
+** desired state management (like...k8s or terraform+ansible or smth)
+
+* The author recommends against monorepos!
+
+* though the author doesn't say it, hints about problems.with a monorepo are:
+** permissions
+** build dependencies get weird (what if proj x depends on  file f from proj y. How do we trigger a build of x when file f changes? What about when it gets renamed ?)
+
+* VFS for Git: a tool to only download the files u need, from huge git repos (developed my microsoft)
+
+* Ownership models (by Martin Fowler)
+** Strong = a group owns a piece of code. When someone outside the group wants to change that code, they make a request, and owners change it for them
+** Weak: other ppl make pull request, but owners merge it
+** Collective: any dev can change anything
+
+* Tool to manage complex build graphs: Bazel
+
+* Questions to see if you're doing CI (from Jez Humble):
+** "Do you check in to mainline once per day?"
+** "Do you have a suite of tests to validate your changes?"
+** "When the build is broken, is it the #1 priority of the team to fix it?"
+
+* "It’s worth noting that as a general rule, you’ll be more likely to gravitate toward request-response–based calls with orchestration, whereas choreography tends to make heavier use of events"
+
+* In systems where communication between microservices happens through topics, it' hard to figure out what's going on. More specifically it's hard to realize what stage a saga is in. The easiest way to solve is is to create a "projected view service" (a svc that consumes messages from the required topics, and displays statuses - use correlation IDs)
+
+* "If you have five microservices, I don’t think you can easily justify a service mesh (it’s arguable as to whether you can justify Kubernetes if you only have five microservices!). "
+
+* Interesting thing about service meshes: "Common features implemented by service meshes include mutual TLS, correlation IDs, service discovery and load balancing, and more. Often this type of functionality is fairly generic from one microservice to the next, so we’d end up making use of a shared library to handle it. But then you have to deal with what happens if different microservices have different versions of the libraries running, or what happens if you have microservices written in different runtimes."
+
+* API Gateway for K8s: Ambassador
+
+* North-south ttaffic = traffic from/to the external world, to/from the datacenter. East-west traffic is traffic inside the datacenter. Gateways are used for north-south traffic, meshes are used for east-west traffic.
+
+* DNS should resolve to load balancers' IPs
+
+* haha, wow, encouraging ppl to switch to new API  versions by adding sleep() calls and increasing the sleep duration, so their calls are very slow
+
+* the author says that emulation is better than having N services coexist (so transform v1 calls to v2 calls and forward them.... don't maintain v1 and v2 together)
+
+* When u have to maintain 3 versions of backwards-incompatible API versions: "we internally transformed all requests to the V1 endpoint to a V2 request, and then V2 requests to the V3 endpoint" - interesting idea!
+
+* Tool for testing semantic changes to APIs: Pact
+
+* API schema compatibility checkers: "We have Protolock for protocol buffers, json-schema-diff-validator for JSON Schema, and openapi-diff for the OpenAPI specification."
+
+* Schemas for events: "One is AsyncAPI, which has picked up a number of big-name users, but the one gaining most traction seems to be CloudEvents, a specification which is backed by the Cloud Native Computing Foundation (CNCF). "
+
+* "when both client and server are owned by the same team—I am more relaxed about not having schemas."
+
+* Topic vs queue: Topics have consumer groups. Each message is delivered to 1 consumer in each group
+
+* "Fundamentally, GraphQL is a call aggregation and filtering mechanism, so in the context of a microservice architecture it would be used to aggregate calls over multiple downstream microservices. As such, it’s not something that would replace general microservice-to-microservice communication"
+
+* "Another issue is that while GraphQL theoretically can handle writes, it doesn’t seem to fit as well as for reads. This leads to situations in which teams are using GraphQL for read but REST for writes."
+
+* the author says that because caching in GraphQL is hard, some people might use hybrid REST/GraphQL solutions
+
+* "...caching feels like it was either consciously or unconsciously ignored as part of the initial development of GraphQL"
+
+* "Despite intellectually appreciating the goals behind HATEOAS, I haven’t seen much evidence that the additional work to implement this style of REST delivers worthwhile benefits in the long run, nor can I recall in the last few years talking to any teams implementing a microservice architecture that can speak to the value of using HATEOAS"
+
+* a good metaphor for HATEOAS is that one doesn't need to know too many endpoints. They'll all be discovered through investigating the payload, and checking out standard pieces of the response. Usecase ?
+
+* Oh... so client-side gRPC where one doesn't control the client, is bad (some people deliver JS code to clients) "If you’re having to support a wide variety of other applications that might need to talk to your microservices, the need to compile client-side code against a server-side schema can be problematic. In that case, some form of REST over HTTP API would likely be a better fit"
+
+* "...be aware that RPC technology sometimes comes with restrictions on interoperability"
+
+* Some people use "Atom" as a sort of queue. Atom however may deliver the message to multiple consumers (so possibly rly bad)
+
+* temporal coupling: if a service needs to be up when another one calls it - the 2 are temporally 
+coupled. Queue-like mechanisms decouple services, and allow them to go offline independently
+
+* Asynchronous communication: The author doesn't necessarily talk about async await. He's talking about making a call and NOT waiting for the answer in any significant way (this is not necessarily achieved with async/await keywords). For example, making a synchronous call (to add stuff to a queue for ex), which which at some later point makes another service do something is closer to what the author means by asynchronous communication.
+
+* !!! Flyway and Liquidbase -> db migration tools
+
+* !!! Tool for viewing what parts of the codebase change more often #mindblown: CodeScene
+
+* "Real system architecture is a constantly evolving thing that must adapt as needs and knowledge change. The skill is in getting used to this idea,"
+
+* "Spinning up a few more copies of your existing monolithic system behind a load balancer may well help you scale your system much more effectively than going through a complex and lengthy decomposition to microservices."
+
+* This book is patting Vlad on the back constantly: "Microservices are not the goal. You don’t “win” by having microservices. Adopting a microservice architecture should be a conscious decision, one based on rational decision making"
+
+* "Low coupling and high cohesion is good". Coupling = share as few assumptions as possible. Cohesion = things that work (or get deployed) together, should be close to each other
+
+* "Organizational and domain-driven service boundaries are my own starting point. But that’s just my default approach. Typically, a number of the factors I’ve outlined here come into play, and which ones influence your own decisions will be based on the problems you are trying to solve. You need to look at your own specific circumstances to determine what works best for you—and hopefully I’ve given you a few different options to consider. Just remember, if someone says “The only way to do this is X!” they are likely just selling you more dogma. You can do better than that."
+
+* ...so CRUD microservices ARE the problem! :p "If you see a microservice that just looks like a thin wrapper around database CRUD operations, that is a sign that you may have weak cohesion and tighter coupling, as logic that should be in that service to manage the data is instead spread elsewhere in your system"
+
+* "Domain coupling can also become problematic as more complex sets of data are sent between services—this can often point to the more problematic forms of coupling we’ll explore shortly."
+
+* "Don’t feel the need to rush to adopt Kubernetes, or even containers for that matter. They absolutely offer significant advantages over more traditional deployment techniques, but their adoption is difficult to justify if you have only a few microservices"
+
+* "...a log aggregation tool is so essential that you should consider it a prerequisite for adopting microservices"
+
+* Y monolith bad? 
+** takes long to onboard people
+** changes to one piece of code, break others, seemingly unrelated
+** tests slow
+
+* Modular monolith: An approach that the author recommends: Starting from a monolith, as the company grows, it gets "split" or evolves into multiple monoliths, that still need to be deployed together
+
+* "Think of adopting microservices as less like flipping a switch, and more like turning a dial. As you turn up the dial, and you have more microservices, you have increased flexibility. But you likely ramp up the pain points too. This is yet another reason I strongly advocate incremental adoption of microservices. By turning up the dial gradually, you are better able to assess the impact as you go, and to stop if required."
+
+* "By making our services end-to-end slices of business functionality, we ensure that our architecture is arranged to make changes to business functionality as efficient as possible. Arguably, with microservices we have made a decision to prioritize high cohesion of business functionality over high cohesion of technical functionality."
+
+* Microservices are deployable separately. Corollary:  if it's not deployable independently, it's not a microservice:  Example: bond, and the mercurio data types, and the central backend data types
+
+* wth "most"?: "This means microservice architectures avoid the use of shared databases in most circumstances"
+
+* OmniGraffe -> program used for all the graphs in the book
+
+* "Microservices have become, for many, the default architectural choice. This is something that I think is hard to justify, "
